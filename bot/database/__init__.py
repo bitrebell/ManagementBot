@@ -4,6 +4,8 @@ Database initialization
 
 import os
 import json
+import time
+import random
 from typing import Dict, List, Any, Optional, Union
 
 # Simple JSON database implementation
@@ -24,20 +26,45 @@ class JSONDatabase:
                 json.dump({}, f)
             return {}
         
-        # Load data from file
-        try:
-            with open(self.db_path, "r") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            # If file is corrupted, create a new one
-            with open(self.db_path, "w") as f:
-                json.dump({}, f)
-            return {}
+        # Load data from file with retry mechanism
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                with open(self.db_path, "r") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                # If file is corrupted, create a new one
+                with open(self.db_path, "w") as f:
+                    json.dump({}, f)
+                return {}
+            except Exception as e:
+                # If file is locked, wait and retry
+                if attempt < max_retries - 1:
+                    time.sleep(0.1 + random.random() * 0.3)  # Random backoff
+                else:
+                    # Last attempt failed, return empty dict
+                    print(f"Error loading database {self.db_name}: {str(e)}")
+                    return {}
     
     def _save_db(self) -> None:
         """Save database to file"""
-        with open(self.db_path, "w") as f:
-            json.dump(self.data, f, indent=4)
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        
+        # Save data to file with retry mechanism
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                with open(self.db_path, "w") as f:
+                    json.dump(self.data, f, indent=4)
+                return
+            except Exception as e:
+                # If file is locked, wait and retry
+                if attempt < max_retries - 1:
+                    time.sleep(0.1 + random.random() * 0.3)  # Random backoff
+                else:
+                    # Last attempt failed, log error
+                    print(f"Error saving database {self.db_name}: {str(e)}")
     
     def get(self, key: str, default: Any = None) -> Any:
         """Get value from database"""

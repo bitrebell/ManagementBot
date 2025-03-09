@@ -8,7 +8,6 @@ ALL_MODULES = [
     "welcome",
     "notes",
     "filters",
-    "music",
     "help",
     "start",
     "antiflood",

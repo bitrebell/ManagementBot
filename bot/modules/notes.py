@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from bot.database import notes_db
 from bot.utils import is_admin
+import re
 
 # Module info
 __MODULE__ = "Notes"
@@ -87,7 +88,7 @@ async def get_note_by_hashtag(client: Client, message: Message):
     chat_id = str(message.chat.id)
     
     # Get note name from hashtag
-    match = message.text.match(r"^#([a-zA-Z0-9_]+)")
+    match = re.match(r"^#([a-zA-Z0-9_]+)", message.text)
     if not match:
         return
     
